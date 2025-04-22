@@ -23,9 +23,11 @@ class Card:
         Suit.Spades: '♠',
     }
 
+
     def __init__(self, suit: Suit, rank: Union[str, int]):
         self.suit = suit
         self.rank = rank
+
 
     def value(self) -> int:
         if self.rank in self.rank_val_dict:
@@ -33,10 +35,12 @@ class Card:
 
         return int(self.rank)
 
+
     def __str__(self) -> str:
         if self.suit is not Suit.Joker:
-            return f'{self.rank} of {self.suit_symbols[self.suit]}'
+            return f'{self.rank}{self.suit_symbols[self.suit]}'
         return '🤡🃏'
+
 
     def __repr__(self):
         return self.__str__()
