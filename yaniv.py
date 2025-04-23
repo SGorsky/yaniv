@@ -2,8 +2,8 @@ import random
 from enum import auto, Enum
 from typing import List, Set
 
-from Computer import Computer
-from Player import Player
+from computer import Computer
+from player import Player
 from card import Card, Suit
 
 
@@ -18,6 +18,7 @@ class GameState(Enum):
 class Yaniv:
     deck = []
     trash = []
+    pickup_options: []
     num_ai_players: int = 3
     players_list: List[Player] = []
     yaniv_total: int
@@ -86,7 +87,10 @@ class Yaniv:
 
 
     def player_discard(self):
-        pass
+        discard_options = self.players_list[self.cur_turn].get_discard_options()
+        print(self.players_list[0])
+        print('Discard Options:', discard_options)
+        # print('Pick-up Options:', pickup_options)
 
 
     def play(self):
