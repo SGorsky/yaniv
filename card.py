@@ -38,6 +38,8 @@ class Card:
 
     def __str__(self) -> str:
         if self.suit is not Suit.Joker:
+            if self.suit in (Suit.Hearts, Suit.Diamonds):
+                return f"\033[91m{self.rank}{self.suit_symbols[self.suit]}\033[0m"  # Red
             return f'{self.rank}{self.suit_symbols[self.suit]}'
         return '🤡🃏'
 
