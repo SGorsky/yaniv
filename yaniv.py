@@ -25,7 +25,7 @@ class Yaniv:
     state: GameState
 
 
-    def __init__(self, num_ai_players: int, yaniv_total=7, ai_difficulty: dict = None):
+    def __init__(self, player_name: str, num_ai_players: int, yaniv_total=7, ai_difficulty: dict = None):
         self.yaniv_total = yaniv_total
         rank_list = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K']
         for rank in rank_list:
@@ -35,7 +35,7 @@ class Yaniv:
         self.deck.append(Card(Suit.Joker, 'X'))
         random.shuffle(self.deck)
 
-        user = Player('Player Name')
+        user = Player(player_name)
         self.players_list.append(user)
         for i in range(num_ai_players):
             self.players_list.append(Computer(f'AI {i + 1}', i))
@@ -63,6 +63,7 @@ class Yaniv:
         while True:
             choice = input()
             if choice.upper().strip() in valid_choices:
+                print('')
                 return choice.upper().strip()
             print('Invalid choice. Please enter one of', valid_choices)
 
@@ -168,5 +169,5 @@ class Yaniv:
 
 
 if __name__ == '__main__':
-    yaniv = Yaniv(3, 7)
+    yaniv = Yaniv('Player', 3, 7)
     yaniv.play()
