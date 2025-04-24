@@ -71,6 +71,13 @@ class Yaniv:
         print(f'Current turn: {self.players_list[self.cur_turn].name}')
 
 
+    def next_player_turn(self):
+        self.cur_turn += 1
+        if self.cur_turn >= len(self.players_list):
+            self.cur_turn = 0
+        print(f'Current turn: {self.players_list[self.cur_turn].name}')
+
+
     def player_turn(self):
         game_menu = '{player}\nCurrent Top of Discard Pile: {discard}\n\nWhat would you like to do?\n{menu}'
         menu_options = '[D] Discard card(s)\n[Q] Quit'

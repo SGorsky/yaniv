@@ -18,6 +18,12 @@ class Player:
         self.cards = []
 
 
+    def discard_card(self, discard: Card):
+        if not isinstance(discard, Card) or discard is None or discard not in self.cards:
+            return
+        self.cards.remove(discard)
+
+
     def pickup_card(self, new_card: Card):
         self.cards.append(new_card)
         self.cards.sort(key=lambda card: (RANK_ORDER[card.rank], SUIT_ORDER[card.suit]))
