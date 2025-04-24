@@ -18,13 +18,13 @@ class Player:
         self.cards = []
 
 
-    def discard_card(self, discard: Card):
+    def discard_card(self, discard: Card) -> None:
         if not isinstance(discard, Card) or discard is None or discard not in self.cards:
             return
         self.cards.remove(discard)
 
 
-    def pickup_card(self, new_card: Card):
+    def pickup_card(self, new_card: Card) -> None:
         self.cards.append(new_card)
         self.cards.sort(key=lambda card: (RANK_ORDER[card.rank], SUIT_ORDER[card.suit]))
 
@@ -33,7 +33,7 @@ class Player:
         return sum([card.value() for card in self.cards])
 
 
-    def get_discard_options(self):
+    def get_discard_options(self) -> List[Card]:
         discard_options = []
 
         # Check for multiple cards of the same rank and suit
@@ -49,7 +49,7 @@ class Player:
         # If there are multiple cards of the same rank, show them as a discard option
         for rank in rank_count:
             rank_matches = [c for c in self.cards if c.rank == rank]
-            if rank_count == 1:
+            if rank_count[rank] == 1:
                 continue
             elif rank_count[rank] == 2:
                 discard_options.append(rank_matches)
