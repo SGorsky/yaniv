@@ -106,26 +106,30 @@ class Yaniv:
             # Display the user's new hand and end the turn
             print(player)
         else:
-            time.sleep(3)
+            time.sleep(2)
         self.pickup_options = discard_choice
         self.next_player_turn()
 
 
     def call_yaniv(self):
+        # If a player calls Yaniv, check if any other players have a smaller hand than them
         winner = self.players_list[self.cur_turn]
         print(f'{self.players_list[self.cur_turn].name} called Yaniv. Hand total is ', winner.calc_hand_value())
 
+        # Go through each player and check if any have a smaller hand
+        # If they do, the player that called Yaniv gets a penalty instead of 0 points
         winning_player_index = None
         i = 0
         for p in self.players_list:
             if p != self.players_list[self.cur_turn]:
                 hand_value = p.calc_hand_value()
-                print(f'{p.name} {p.cards} Total = {hand_value}')
+                print(f'{p.name} {p.cards} = {hand_value}')
                 if hand_value < winner.calc_hand_value():
                     winner = p
                     winning_player_index = i
             i += 1
 
+        print('')
         if winning_player_index is None:
             winning_player_index = self.cur_turn
         else:
@@ -145,8 +149,19 @@ class Yaniv:
         for p in self.players_list:
             print(p.name, p.points[-1])
 
-        self.new_round(winning_player_index)
-        self.state = GameState.ChooseAction
+        # If a player goes over 100 points, they lose and are eliminated from the game
+        for p in self.players_list[:]:
+            if p.points[-1] > 100:
+                print(f'{p.name} is eliminated')
+                self.players_list.remove(p)
+
+        # If all players have been eliminated, declare a winner
+        if len(self.players_list) == 1:
+            print(f'{self.players_list[0].name.upper()} WINS!')
+            exit(0)
+        else:
+            self.new_round(winning_player_index)
+            self.state = GameState.ChooseAction
 
     def play(self):
         while True:

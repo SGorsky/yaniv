@@ -174,7 +174,14 @@ class Player:
 
 
     def add_points(self, penalty: int = 0):
+        # Add points to the player with an optional Assaf penality
+        # If the score is 50 or 100, subtract 50 from the score
         self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
+        print(f'{self.name}: {self.points[-2]} + {self.calc_hand_value()} = {self.points[-1]}')
+        if self.points[-1] % 50 == 0:
+            print(f'{self.name} has {self.points[-1]} points. -50 points')
+            self.points[-1] -= 50
+
 
     def __str__(self) -> str:
         return f'{self.name}\nHand: {self.cards}\nValue: {self.calc_hand_value()}'
