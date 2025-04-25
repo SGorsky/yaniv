@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 import utils
 from card import Card, Suit
+from utils import GameState
 
 SUIT_ORDER = {Suit.Hearts: 1, Suit.Diamonds: 2, Suit.Clubs: 3, Suit.Spades: 4, Suit.Joker: 5}
 RANK_ORDER = {'X': 0, 'A': 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 'J': 11, 'Q': 12, 'K': 13}
@@ -15,8 +16,11 @@ class Player:
 
     def __init__(self, name: str):
         self.name = name
-        self.points = []
+        self.points = [0]
         self.cards = []
+
+    def discard_hand(self):
+        self.cards.clear()
 
 
     def discard_card(self, discard: Card) -> None:
@@ -115,6 +119,27 @@ class Player:
         return discard_options
 
 
+    def choose_action(self, yaniv_total, pickup_options):
+        game_menu = '{player}\nCurrent Top of Discard Pile: {discard}\n\nWhat would you like to do?\n{menu}'
+        menu_options = '[D] Discard card(s)\n[Q] Quit'
+        yaniv_menu_options = '[D] Discard card(s)\n[C] Call Yaniv\n[Q] Quit'
+
+        can_call_yaniv = self.calc_hand_value() <= yaniv_total
+        print(game_menu.format(player=self, discard=pickup_options, menu=yaniv_menu_options if can_call_yaniv else menu_options))
+
+        choice = utils.get_menu_choice({'D', 'C', 'Q'} if can_call_yaniv else {'D', 'Q'})
+        if choice == 'D':
+            return GameState.DiscardPickup
+        elif choice == 'C':
+            return GameState.CallYaniv
+        elif choice == 'Q':
+            print('Are you sure? Y/N')
+            choice = utils.get_menu_choice({'Y', 'N'})
+            if choice == 'Y':
+                exit(0)
+        return GameState.ChooseAction
+
+
     def do_turn(self, pickup_options: List[Card]) ->  Tuple[Card, int]:
         # Get the discard options for the player
         discard_options = self.get_discard_options()
@@ -147,6 +172,9 @@ class Player:
         # Return the discarded card(s) and the pickup choice
         return discard_choice, pickup_menu_choice
 
+
+    def add_points(self, penalty: int = 0):
+        self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
 
     def __str__(self) -> str:
         return f'{self.name}\nHand: {self.cards}\nValue: {self.calc_hand_value()}'

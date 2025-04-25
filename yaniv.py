@@ -1,18 +1,11 @@
 import random
-from enum import auto, Enum
-from typing import List, Set
+import time
+from typing import List
 
-import utils
+from utils import GameState
 from card import Card, Suit
 from computer import Computer
 from player import Player
-
-
-class GameState(Enum):
-    PlayerTurn = auto()
-    PlayerDiscardPickup = auto()
-    PlayerYaniv = auto()
-    ComputerTurn = auto()
 
 
 class Yaniv:
@@ -24,23 +17,35 @@ class Yaniv:
     yaniv_total: int
     cur_turn: int
     state: GameState
+    ASSAF_PENALTY = 25
 
 
     def __init__(self, player_name: str, num_ai_players: int, yaniv_total=7, ai_difficulty: dict = None):
         self.yaniv_total = yaniv_total
+        user = Player(player_name)
+        self.players_list.append(user)
+        for i in range(num_ai_players):
+            self.players_list.append(Computer(f'AI {i + 1}', 1))
+        # random.shuffle(self.players_list)
+
+        self.new_round()
+        self.state = GameState.ChooseAction
+
+
+    def new_round(self, starting_turn: int = 0):
+        self.deck.clear()
+        self.trash.clear()
         rank_list = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K']
         for rank in rank_list:
             for suit in [Suit.Diamonds, Suit.Hearts, Suit.Clubs, Suit.Spades]:
                 self.deck.append(Card(suit, rank))
 
         self.deck.append(Card(Suit.Joker, 'X'))
+        self.deck.append(Card(Suit.Joker, 'X'))
         random.shuffle(self.deck)
 
-        user = Player(player_name)
-        self.players_list.append(user)
-        for i in range(num_ai_players):
-            self.players_list.append(Computer(f'AI {i + 1}', i))
-        # random.shuffle(self.players_list)
+        for p in self.players_list:
+            p.discard_hand()
 
         for i in range(5):
             for p in self.players_list:
@@ -49,46 +54,15 @@ class Yaniv:
         self.trash.append(self.deck.pop())
         self.pickup_options = [self.trash[-1]]
 
-        # for p in self.players_list:
-        #     print(p, '\n')
-
-        self.cur_turn = 0  # random.randint(0, len(self.players_list) - 1)
-        if isinstance(self.players_list[self.cur_turn], Computer):
-            self.state = GameState.ComputerTurn
-        else:
-            self.state = GameState.PlayerTurn
-
+        self.cur_turn = starting_turn
 
     def next_player_turn(self):
         self.cur_turn += 1
         if self.cur_turn >= len(self.players_list):
             self.cur_turn = 0
 
-        if isinstance(self.players_list[self.cur_turn], Computer):
-            self.state = GameState.ComputerTurn
-        else:
-            self.state = GameState.PlayerTurn
+        self.state = GameState.ChooseAction
         print(f'Current turn: {self.players_list[self.cur_turn].name}')
-
-
-    def player_turn(self):
-        game_menu = '{player}\nCurrent Top of Discard Pile: {discard}\n\nWhat would you like to do?\n{menu}'
-        menu_options = '[D] Discard card(s)\n[Q] Quit'
-        yaniv_menu_options = '[D] Discard card(s)\n[C] Call Yaniv\n[Q] Quit'
-
-        can_call_yaniv = self.players_list[self.cur_turn].calc_hand_value() <= self.yaniv_total
-        print(game_menu.format(player=self.players_list[self.cur_turn], discard=self.trash[-1], menu=yaniv_menu_options if can_call_yaniv else menu_options))
-
-        choice = utils.get_menu_choice({'D', 'C', 'Q'} if can_call_yaniv else {'D', 'Q'})
-        if choice == 'D':
-            self.state = GameState.PlayerDiscardPickup
-        elif choice == 'C':
-            self.state = GameState.PlayerYaniv
-        elif choice == 'Q':
-            print('Are you sure? Y/N')
-            choice = utils.get_menu_choice({'Y', 'N'})
-            if choice == 'Y':
-                exit(0)
 
 
     def player_discard_pickup(self):
@@ -99,7 +73,11 @@ class Yaniv:
         if pickup_choice > len(self.pickup_options):
             # If the pickup choice is draw from the deck, remove the top card from the deck and add it to your hand
             deck_card = self.deck.pop()
-            print(f'{player.name} drew a {deck_card} from the deck')
+
+            if isinstance(player, Computer):
+                print(f'{player.name} drew from the deck')
+            else:
+                print(f'{player.name} drew a {deck_card} from the deck')
 
             player.pickup_card(deck_card)
         else:
@@ -124,21 +102,60 @@ class Yaniv:
             self.trash.append(discard_choice)
             discard_choice = [discard_choice]
 
-        # Display the new hand and end the turn
-        print(player, '\n')
+        if not isinstance(player, Computer):
+            # Display the user's new hand and end the turn
+            print(player)
+        else:
+            time.sleep(3)
         self.pickup_options = discard_choice
         self.next_player_turn()
 
 
+    def call_yaniv(self):
+        winner = self.players_list[self.cur_turn]
+        print(f'{self.players_list[self.cur_turn].name} called Yaniv. Hand total is ', winner.calc_hand_value())
+
+        winning_player_index = None
+        i = 0
+        for p in self.players_list:
+            if p != self.players_list[self.cur_turn]:
+                hand_value = p.calc_hand_value()
+                print(f'{p.name} {p.cards} Total = {hand_value}')
+                if hand_value < winner.calc_hand_value():
+                    winner = p
+                    winning_player_index = i
+            i += 1
+
+        if winning_player_index is None:
+            winning_player_index = self.cur_turn
+        else:
+            print(f'{winner.name} called Assaf! {self.players_list[self.cur_turn].name} is penalized an additional 25 points')
+
+        for p in self.players_list:
+            if p == winner:
+                continue
+            if p == self.players_list[self.cur_turn]:
+                p.add_points(self.ASSAF_PENALTY)
+            else:
+                p.add_points()
+
+        print('\n     SCOREBOARD     ')
+        print('====================')
+
+        for p in self.players_list:
+            print(p.name, p.points[-1])
+
+        self.new_round(winning_player_index)
+        self.state = GameState.ChooseAction
+
     def play(self):
         while True:
-            if isinstance(self.players_list[self.cur_turn], Computer):
-                pass
-            else:
-                if self.state == GameState.PlayerTurn:
-                    self.player_turn()
-                elif self.state == GameState.PlayerDiscardPickup:
-                    self.player_discard_pickup()
+            if self.state == GameState.ChooseAction:
+                self.state = self.players_list[self.cur_turn].choose_action(self.yaniv_total, self.pickup_options)
+            elif self.state == GameState.DiscardPickup:
+                self.player_discard_pickup()
+            elif self.state == GameState.CallYaniv:
+                self.call_yaniv()
 
 
 if __name__ == '__main__':

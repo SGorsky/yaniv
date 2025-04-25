@@ -1,5 +1,12 @@
+from enum import auto, Enum
 from typing import Set
 
+
+class GameState(Enum):
+    ChooseAction = auto()
+    DiscardPickup = auto()
+    CallYaniv = auto()
+    ComputerTurn = auto()
 
 def get_menu_choice(valid_choices: Set) -> str:
     while True:
@@ -8,4 +15,3 @@ def get_menu_choice(valid_choices: Set) -> str:
             print('')
             return choice.upper().strip()
         print('Invalid choice. Please enter one of', valid_choices)
-
