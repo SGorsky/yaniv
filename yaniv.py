@@ -5,6 +5,7 @@ from typing import List
 from card import Card, Suit
 from computer import Computer
 from player import Player
+from utils import GameState
 
 
 class Yaniv:
@@ -146,9 +147,9 @@ class Yaniv:
 
         print('\n     SCOREBOARD     ')
         print('====================')
-
         for p in self.players_list:
             print(p.name, p.points[-1])
+        print('====================\n')
 
         # If a player goes over 100 points, they lose and are eliminated from the game
         for p in self.players_list[:]:
@@ -161,6 +162,7 @@ class Yaniv:
             print(f'{self.players_list[0].name.upper()} WINS!')
             exit(0)
         else:
+            winning_player_index = self.players_list.index(winner)
             self.new_round(winning_player_index)
             self.state = GameState.ChooseAction
         print('')
