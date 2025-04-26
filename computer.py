@@ -86,9 +86,6 @@ class Computer(Player):
             discard_choice = discard_options[random.randint(0, len(discard_options) - 1)]
             pickup_choice = random.randint(1, len(pickup_options) + 1)
         elif self.level == 2:
-            print('Cards', self.cards)
-            print('Pickup options', pickup_options)
-
             max_index, max_discard = self.__evaluate_discards(discard_options)
             pickup_choice = None
             discard_choice = None
