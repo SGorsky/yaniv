@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import utils
 from card import Card, Suit
@@ -19,6 +19,7 @@ class Player:
         self.points = [0]
         self.cards = []
 
+
     def discard_hand(self):
         self.cards.clear()
 
@@ -38,7 +39,7 @@ class Player:
         return sum([card.value() for card in self.cards])
 
 
-    def get_discard_options(self) -> List[Card]:
+    def get_discard_options(self) -> List[Union[Card, List[Card]]]:
         discard_options = []
 
         # Check for multiple cards of the same rank and suit
@@ -53,10 +54,10 @@ class Player:
 
         # If there are multiple cards of the same rank, show them as a discard option
         for rank in rank_count:
-            rank_matches = [c for c in self.cards if c.rank == rank]
             if rank_count[rank] == 1:
                 continue
-            elif rank_count[rank] == 2:
+            rank_matches = [c for c in self.cards if c.rank == rank]
+            if rank_count[rank] == 2:
                 discard_options.append(rank_matches)
             elif rank_count[rank] == 3:
                 discard_options.append([rank_matches[0], rank_matches[1], rank_matches[2]])
@@ -69,7 +70,6 @@ class Player:
                 discard_options.append([rank_matches[1], rank_matches[0], rank_matches[3], rank_matches[2]])
                 discard_options.append([rank_matches[1], rank_matches[0], rank_matches[2], rank_matches[3]])
                 discard_options.append([rank_matches[2], rank_matches[0], rank_matches[1], rank_matches[3]])
-
 
         # For each suit that appears at least 3 times on its own or twice with at least one Joker,
         # see if a sequence can be made with those cards
@@ -103,7 +103,7 @@ class Player:
 
                         # If the sequence has 3 or more cards, it's valid on its own and can be added as a possible discard option
                         if len(possible_sequence) >= 3:
-                            discard_options.append(possible_sequence)
+                            discard_options.append(possible_sequence[:])
 
                         # If the sequence has 2 cards, use the Joker at the beginning/end if it is a valid option
                         # Ex: We cannot have [Joker, Ace, 2] as a possible discard since Ace is the lowest card, but we can have [Ace, 2, Joker]
@@ -112,7 +112,7 @@ class Player:
                                 discard_options.append([self.cards[0]] + possible_sequence)
                             if possible_sequence[-1].rank != 'K':
                                 discard_options.append(possible_sequence + [self.cards[0]])
-                            break
+                            # break
 
                         j += 1
 
@@ -140,7 +140,7 @@ class Player:
         return GameState.ChooseAction
 
 
-    def do_turn(self, pickup_options: List[Card]) ->  Tuple[Card, int]:
+    def do_turn(self, pickup_options: List[Card]) -> Tuple[Card, int]:
         # Get the discard options for the player
         discard_options = self.get_discard_options()
         print(self)
@@ -177,7 +177,7 @@ class Player:
         # Add points to the player with an optional Assaf penality
         # If the score is 50 or 100, subtract 50 from the score
         self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
-        print(f'{self.name}: {self.points[-2]} + {self.calc_hand_value()} = {self.points[-1]}')
+        print(f'{self.name}: {self.points[-2]} + {self.calc_hand_value()} {"" if penalty == 0 else f"+ {penalty} "}= {self.points[-1]}')
         if self.points[-1] % 50 == 0:
             print(f'{self.name} has {self.points[-1]} points. -50 points')
             self.points[-1] -= 50

@@ -2,7 +2,6 @@ import random
 import time
 from typing import List
 
-from utils import GameState
 from card import Card, Suit
 from computer import Computer
 from player import Player
@@ -25,7 +24,7 @@ class Yaniv:
         user = Player(player_name)
         self.players_list.append(user)
         for i in range(num_ai_players):
-            self.players_list.append(Computer(f'AI {i + 1}', 1))
+            self.players_list.append(Computer(f'AI {i + 1}', 2))
         # random.shuffle(self.players_list)
 
         self.new_round()
@@ -54,7 +53,9 @@ class Yaniv:
         self.trash.append(self.deck.pop())
         self.pickup_options = [self.trash[-1]]
 
+        print(f'New round! {self.players_list[starting_turn].name} goes first')
         self.cur_turn = starting_turn
+
 
     def next_player_turn(self):
         self.cur_turn += 1
@@ -62,7 +63,7 @@ class Yaniv:
             self.cur_turn = 0
 
         self.state = GameState.ChooseAction
-        print(f'Current turn: {self.players_list[self.cur_turn].name}')
+        print(f'\nCurrent turn: {self.players_list[self.cur_turn].name}')
 
 
     def player_discard_pickup(self):
@@ -91,7 +92,7 @@ class Yaniv:
                 self.trash.remove(self.pickup_options[pickup_choice - 1])
 
         # Remove the discarded cards from the player's hand and add them to the trash
-        if isinstance(discard_choice, List):
+        if isinstance(discard_choice, list):
             # If multiple cards were discarded, only keep the first and second
             for d in discard_choice:
                 player.discard_card(d)
@@ -114,7 +115,7 @@ class Yaniv:
     def call_yaniv(self):
         # If a player calls Yaniv, check if any other players have a smaller hand than them
         winner = self.players_list[self.cur_turn]
-        print(f'{self.players_list[self.cur_turn].name} called Yaniv. Hand total is ', winner.calc_hand_value())
+        print(f'{winner.name} called Yaniv with {winner.cards} Hand total is ', winner.calc_hand_value())
 
         # Go through each player and check if any have a smaller hand
         # If they do, the player that called Yaniv gets a penalty instead of 0 points
@@ -133,7 +134,7 @@ class Yaniv:
         if winning_player_index is None:
             winning_player_index = self.cur_turn
         else:
-            print(f'{winner.name} called Assaf! {self.players_list[self.cur_turn].name} is penalized an additional 25 points')
+            print(f'{winner.name} called Assaf! {self.players_list[self.cur_turn].name} is penalized an additional {self.ASSAF_PENALTY} points')
 
         for p in self.players_list:
             if p == winner:
@@ -162,6 +163,8 @@ class Yaniv:
         else:
             self.new_round(winning_player_index)
             self.state = GameState.ChooseAction
+        print('')
+
 
     def play(self):
         while True:
