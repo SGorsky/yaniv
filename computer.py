@@ -120,9 +120,6 @@ class Computer(Player):
                     # If picking up a new card gives you a new discard option that's better than your current best discard, you should pick up the card
                     # Pick a card that you can drop so that next turn you can drop this new better set
                     elif val > max_discard and (new_discard_max is None or val > new_discard_max):
-                        pickup_choice = pickup_index
-                        new_discard_max = val
-
                         # Create a new temporary discard options list
                         # Check each discard option for cards that are in the new discard set
                         # Set that discard option to None
@@ -142,8 +139,10 @@ class Computer(Player):
                                         except ValueError:
                                             pass
                                         break
-
-                        max_index, max_discard = self.__evaluate_discards(tmp_discard_options)
+                        if any([x is not None for x in tmp_discard_options]):
+                            max_index, max_discard = self.__evaluate_discards(tmp_discard_options)
+                            pickup_choice = pickup_index
+                            new_discard_max = val
 
             if discard_choice is None:
                 if len(max_index) == 1:
@@ -176,7 +175,7 @@ class Computer(Player):
                         discard_choice = discard_options[max_index[min_val_card.index(min_card)]]
 
                     # With all discard options having the same min values, multiple drop options that have the same value, just pick the first one
-                    elif all(x == 1 for x in num_cards):
+                    elif all(x == num_cards[0] for x in num_cards):
                         discard_choice = discard_options[max_index[0]]
 
                     else:
