@@ -80,6 +80,12 @@ class Yaniv:
 
         if pickup_choice > len(self.pickup_options):
             # If the pickup choice is draw from the deck, remove the top card from the deck and add it to your hand
+
+            if len(self.deck) == 0:
+                self.deck = self.trash[:-1]
+                self.trash = [self.trash[-1]]
+                random.shuffle(self.deck)
+
             deck_card = self.deck.pop()
 
             if isinstance(player, Computer):
