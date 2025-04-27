@@ -1,6 +1,6 @@
 import random
 import time
-from typing import List
+from typing import List, Dict
 
 from card import Card, Suit
 from computer import Computer
@@ -12,7 +12,7 @@ class Yaniv:
     deck = []
     trash = []
     pickup_options: List[Card]
-    num_ai_players: int = 3
+    num_comp_players: int = 3
     players_list: List[Player] = []
     yaniv_total: int
     cur_turn: int
@@ -20,12 +20,18 @@ class Yaniv:
     ASSAF_PENALTY = 25
 
 
-    def __init__(self, player_name: str, num_ai_players: int, yaniv_total=7, ai_difficulty: dict = None):
+    def __init__(self, player_name: str, num_comp_players: int, yaniv_total=7, computer_difficulty: Dict[str: int] = None):
         self.yaniv_total = yaniv_total
         user = Player(player_name)
         self.players_list.append(user)
-        for i in range(num_ai_players):
-            self.players_list.append(Computer(f'AI {i + 1}', 2))
+
+        if computer_difficulty is None:
+            for i in range(num_comp_players):
+                self.players_list.append(Computer(f'Computer {i + 1}', 2))
+        else:
+            for name in computer_difficulty:
+                self.players_list.append(Computer(name, computer_difficulty[name]))
+
         # random.shuffle(self.players_list)
 
         self.new_round()
@@ -132,9 +138,7 @@ class Yaniv:
             i += 1
 
         print('')
-        if winning_player_index is None:
-            winning_player_index = self.cur_turn
-        else:
+        if winning_player_index is not None:
             print(f'{winner.name} called Assaf! {self.players_list[self.cur_turn].name} is penalized an additional {self.ASSAF_PENALTY} points')
 
         for p in self.players_list:

@@ -8,6 +8,7 @@ class GameState(Enum):
     CallYaniv = auto()
     ComputerTurn = auto()
 
+
 def get_menu_choice(valid_choices: Set) -> str:
     while True:
         choice = input()

@@ -63,8 +63,6 @@ class Computer(Player):
         max_discard = 0
         max_index = []
         for i in range(len(discard_options)):
-            if discard_options[i] is None:
-                continue
             val = discard_options[i].value() if isinstance(discard_options[i], Card) else sum([c.value() for c in discard_options[i]])
             discard_value.append(val)
 
@@ -82,7 +80,7 @@ class Computer(Player):
         discard_options = self.get_discard_options()
 
         if self.level == 1:
-            # Level 1 AI makes random discard and pickup choices
+            # Level 1 Computer makes random discard and pickup choices
             discard_choice = discard_options[random.randint(0, len(discard_options) - 1)]
             pickup_choice = random.randint(1, len(pickup_options) + 1)
         elif self.level == 2:
@@ -93,7 +91,7 @@ class Computer(Player):
             # Check each possible pickup option
             new_discard_max = None
             for pickup_index in range(len(pickup_options)):
-                # If the card is a joker, automatically pick it up. There is never a reason to not pickup a joker
+                # If the card is a joker, automatically pick it up. There is never a reason to not pick up a joker
                 if pickup_options[pickup_index].suit == Suit.Joker:
                     pickup_choice = pickup_index
                     discard_choice = discard_options[max_index[0]]
@@ -121,25 +119,18 @@ class Computer(Player):
                     # Pick a card that you can drop so that next turn you can drop this new better set
                     elif val > max_discard and (new_discard_max is None or val > new_discard_max):
                         # Create a new temporary discard options list
-                        # Check each discard option for cards that are in the new discard set
+                        # Check each discard option for cards that are in the new discard set.
                         # Set that discard option to None
                         tmp_discard_options = [d for d in discard_options]
                         for j in range(len(discard_options)):
                             if isinstance(discard_options[j], Card):
                                 if discard_options[j] in new_discard_set:
-                                    try:
-                                        tmp_discard_options[j] = None
-                                    except ValueError:
-                                        pass
+                                    tmp_discard_options[j] = Card(Suit.Joker, 'X')
                             else:
-                                for card in discard_options[j]:
-                                    if card in new_discard_set:
-                                        try:
-                                            tmp_discard_options[j] = None
-                                        except ValueError:
-                                            pass
-                                        break
-                        if any([x is not None for x in tmp_discard_options]):
+                                if any(card in new_discard_set for card in discard_options[j]):
+                                    tmp_discard_options[j] = Card(Suit.Joker, 'X')
+
+                        if any([x != Card(Suit.Joker, 'X') for x in tmp_discard_options]):
                             max_index, max_discard = self.__evaluate_discards(tmp_discard_options)
                             pickup_choice = pickup_index
                             new_discard_max = val
