@@ -20,7 +20,7 @@ class Yaniv:
     ASSAF_PENALTY = 25
 
 
-    def __init__(self, player_name: str, num_comp_players: int, yaniv_total=7, computer_difficulty: Dict[str: int] = None):
+    def __init__(self, player_name: str, num_comp_players: int, yaniv_total=7, computer_difficulty: Dict[str, int] = None):
         self.yaniv_total = yaniv_total
         user = Player(player_name)
         self.players_list.append(user)
