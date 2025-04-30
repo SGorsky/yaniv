@@ -7,10 +7,11 @@ from utils import GameState
 
 
 class Computer(Player):
-    memory: List[Player]
-    trash_memory: List[Card]
-    level: int
-    memory_chance: int
+    __deck_total: int
+    __level: int
+    __memory: List[Player]
+    __memory_chance: int
+    __trash_memory: List[Card]
 
     # In a full deck, the average value of a randomly drawn card is ~6.3
     __AVG_RAND_CARD_VAL = 6.296296296
@@ -26,11 +27,12 @@ class Computer(Player):
         super().__init__(name)
         self.level = level
 
-        if level > 2:
+        if level >= 3:
             self.memory = [p for p in opponents]
 
             memory_chance_dict = {3: 0.3, 4: 0.6, 5: 1}
             self.memory_chance = memory_chance_dict.get(level, 1)
+            self.__deck_total = 340
 
 
     def choose_action(self, yaniv_total, pickup_options) -> GameState:
@@ -112,8 +114,6 @@ class Computer(Player):
                             elif isinstance(discard_options[i], Card) and discard_options[i] not in new_discard_set:
                                 pickup_choice = pickup_index
                                 break
-                            else:
-                                pass
 
                     # If picking up a new card gives you a new discard option that's better than your current best discard, you should pick up the card
                     # Pick a card that you can drop so that next turn you can drop this new better set
@@ -130,7 +130,7 @@ class Computer(Player):
                                 if any(card in new_discard_set for card in discard_options[j]):
                                     tmp_discard_options[j] = Card(Suit.Joker, 'X')
 
-                        if any([x != Card(Suit.Joker, 'X') for x in tmp_discard_options]):
+                        if any([x.suit != Suit.Joker for x in tmp_discard_options if isinstance(x, Card)]):
                             max_index, max_discard = self.__evaluate_discards(tmp_discard_options)
                             pickup_choice = pickup_index
                             new_discard_max = val
@@ -168,9 +168,6 @@ class Computer(Player):
                     # With all discard options having the same min values, multiple drop options that have the same value, just pick the first one
                     elif all(x == num_cards[0] for x in num_cards):
                         discard_choice = discard_options[max_index[0]]
-
-                    else:
-                        pass
 
             if pickup_choice is None:
                 if pickup_options[0].value() < self.__AVG_RAND_CARD_VAL:

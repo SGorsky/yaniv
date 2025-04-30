@@ -14,6 +14,7 @@ class Yaniv:
     pickup_options: List[Card]
     num_comp_players: int = 3
     players_list: List[Player] = []
+    eliminated_players: List[Player] = []
     yaniv_total: int
     cur_turn: int
     state: GameState
@@ -159,12 +160,15 @@ class Yaniv:
         print('====================')
         for p in self.players_list:
             print(p.name, p.points[-1])
+        for p in self.eliminated_players:
+            print(p.name, p.points[-1])
         print('====================\n')
 
         # If a player goes over 100 points, they lose and are eliminated from the game
         for p in self.players_list[:]:
             if p.points[-1] > 100:
                 print(f'{p.name} is eliminated')
+                self.eliminated_players.append(p)
                 self.players_list.remove(p)
 
         # If all players have been eliminated, declare a winner
