@@ -1,5 +1,5 @@
 import random
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Set, Optional
 
 from card import Card, Suit
 from player import Player
@@ -7,9 +7,10 @@ from utils import GameState
 
 
 class Computer(Player):
+    __deck: Set[Card]
     __deck_total: int
     __level: int
-    __memory: List[Player]
+    __memory: dict
     __memory_chance: int
     __trash_memory: List[Card]
 
@@ -23,16 +24,65 @@ class Computer(Player):
     # Level 4 = Optimal actions but remembers what was discarded/picked up 60% of the time
     # Level 5 = Optimal actions but remembers what was discarded/picked up 100% of the time
 
-    def __init__(self, name: str, level: int, opponents: List[Player] = None):
+    def __init__(self, name: str, level: int):
         super().__init__(name)
-        self.level = level
+        self.__level = level
 
         if level >= 3:
-            self.memory = [p for p in opponents]
-
             memory_chance_dict = {3: 0.3, 4: 0.6, 5: 1}
-            self.memory_chance = memory_chance_dict.get(level, 1)
+            self.__memory_chance = memory_chance_dict.get(level, 1)
+            self.__deck = set()
             self.__deck_total = 340
+
+
+    def initialize_memory(self, other_players: List[str]):
+        if self.__level >= 3:
+            self.__memory = {p: {'num_cards': 5, 'hand': [], 'recent_discard': None} for p in other_players if p != self.name}
+
+
+    def reset(self):
+        super().reset()
+
+        if self.__level >= 3:
+            self.__memory.clear()
+            self.__deck.clear()
+            self.__deck_total = 340
+
+            rank_list = ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K']
+
+            for suit in [Suit.Diamonds, Suit.Hearts, Suit.Clubs, Suit.Spades]:
+                for rank in rank_list:
+                    self.__deck.add(Card(suit, rank))
+            self.__deck.add(Card(Suit.Joker, 'X1'))
+            self.__deck.add(Card(Suit.Joker, 'X2'))
+
+
+    def pickup_card(self, new_card: Card) -> None:
+        super().pickup_card(new_card)
+        self.observe(new_card)
+
+
+    def observe(self, discard: Union[Card, List[Card]], pickup: Optional[Card] = None, player_name: str = None):
+        if self.__level <= 2:
+            return
+
+        if isinstance(discard, Card):
+            discard = [discard]
+
+        for card in discard:
+            if card in self.__deck:
+                self.__deck.remove(card)
+                self.__deck_total -= card.value()
+
+        if player_name:
+            self.__memory[player_name]['recent_discard'] = discard
+            self.__memory[player_name]['num_cards'] -= len(discard) - 1
+
+            for card in discard:
+                if card in self.__memory[player_name]['hand']:
+                    self.__memory[player_name]['hand'].remove(card)
+            if pickup is not None:
+                self.__memory[player_name]['hand'].append(pickup)
 
 
     def choose_action(self, yaniv_total, pickup_options) -> GameState:
@@ -81,11 +131,11 @@ class Computer(Player):
         # Get the discard options
         discard_options = self.get_discard_options()
 
-        if self.level == 1:
+        if self.__level == 1:
             # Level 1 Computer makes random discard and pickup choices
             discard_choice = discard_options[random.randint(0, len(discard_options) - 1)]
             pickup_choice = random.randint(1, len(pickup_options) + 1)
-        elif self.level == 2:
+        else:
             max_index, max_discard = self.__evaluate_discards(discard_options)
             pickup_choice = None
             discard_choice = None
@@ -125,10 +175,10 @@ class Computer(Player):
                         for j in range(len(discard_options)):
                             if isinstance(discard_options[j], Card):
                                 if discard_options[j] in new_discard_set:
-                                    tmp_discard_options[j] = Card(Suit.Joker, 'X')
+                                    tmp_discard_options[j] = Card(Suit.Joker, 'X1')
                             else:
                                 if any(card in new_discard_set for card in discard_options[j]):
-                                    tmp_discard_options[j] = Card(Suit.Joker, 'X')
+                                    tmp_discard_options[j] = Card(Suit.Joker, 'X1')
 
                         if any([x.suit != Suit.Joker for x in tmp_discard_options if isinstance(x, Card)]):
                             max_index, max_discard = self.__evaluate_discards(tmp_discard_options)
@@ -170,7 +220,8 @@ class Computer(Player):
                         discard_choice = discard_options[max_index[0]]
 
             if pickup_choice is None:
-                if pickup_options[0].value() < self.__AVG_RAND_CARD_VAL:
+                deck_avg_val = self.__AVG_RAND_CARD_VAL if self.__level == 2 else self.__deck_total / len(self.__deck)
+                if pickup_options[0].value() < deck_avg_val:
                     pickup_choice = 0
                 else:
                     pickup_choice = len(pickup_options)

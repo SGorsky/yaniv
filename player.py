@@ -5,7 +5,7 @@ from card import Card, Suit
 from utils import GameState
 
 SUIT_ORDER = {Suit.Hearts: 1, Suit.Diamonds: 2, Suit.Clubs: 3, Suit.Spades: 4, Suit.Joker: 5}
-RANK_ORDER = {'X': 0, 'A': 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 'J': 11, 'Q': 12, 'K': 13}
+RANK_ORDER = {'X1': 0, 'X2': 0, 'A': 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 'J': 11, 'Q': 12, 'K': 13}
 
 
 class Player:
@@ -20,7 +20,7 @@ class Player:
         self.cards = []
 
 
-    def discard_hand(self):
+    def reset(self):
         self.cards.clear()
 
 
@@ -140,34 +140,30 @@ class Player:
         return GameState.ChooseAction
 
 
-    def do_turn(self, pickup_options: List[Card]) -> Tuple[Card, int]:
+    def do_turn(self, pickup_options: List[Card]) -> Tuple[Union[Card, List[Card]], int]:
         # Get the discard options for the player
         discard_options = self.get_discard_options()
         print(self)
 
         # Display the discard options and have the user choose which card(s) they want to discard
-        i = 1
         print('Discard Options:')
-        for d in discard_options:
-            print(f'{i}.', d)
-            i += 1
+        for i in range(1, len(discard_options) + 1):
+            print(f'{i}.', discard_options[i - 1])
         print('\nPick-up Options:', pickup_options + ['Draw from the deck'])
         print('What would you like to discard?')
-        discard_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(i - 1)}))
+        discard_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(i)}))
 
         discard_choice = discard_options[discard_menu_choice - 1]
         print('Discarding', discard_choice)
 
         # Display the pickup options and have the user choose which card they want to pickup
-        i = 1
         print('\nPick-up Options:')
-        for d in pickup_options:
-            print(f'{i}.', d)
-            i += 1
-        print(f'{i}. Draw from deck')
+        for i in range(1, len(pickup_options) + 1):
+            print(f'{i}.', pickup_options[i - 1])
+        print(f'{i + 1}. Draw from deck')
 
         print('What would you like to pickup?')
-        pickup_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(i)}))
+        pickup_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(i + 1)}))
 
         # Return the discarded card(s) and the pickup choice
         return discard_choice, pickup_menu_choice

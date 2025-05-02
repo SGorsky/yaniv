@@ -28,12 +28,15 @@ class Yaniv:
 
         if computer_difficulty is None:
             for i in range(num_comp_players):
-                self.players_list.append(Computer(f'Computer {i + 1}', 2))
+                self.players_list.append(Computer(f'Computer {i + 1}', 3))
         else:
             for name in computer_difficulty:
                 self.players_list.append(Computer(name, computer_difficulty[name]))
 
         # random.shuffle(self.players_list)
+        for p in self.players_list:
+            if isinstance(p, Computer):
+                p.initialize_memory([player.name  for player in self.players_list])
 
         self.new_round()
         self.state = GameState.ChooseAction
@@ -47,12 +50,14 @@ class Yaniv:
             for suit in [Suit.Diamonds, Suit.Hearts, Suit.Clubs, Suit.Spades]:
                 self.deck.append(Card(suit, rank))
 
-        self.deck.append(Card(Suit.Joker, 'X'))
-        self.deck.append(Card(Suit.Joker, 'X'))
+        self.deck.append(Card(Suit.Joker, 'X1'))
+        self.deck.append(Card(Suit.Joker, 'X2'))
         random.shuffle(self.deck)
 
         for p in self.players_list:
-            p.discard_hand()
+            p.reset()
+            if isinstance(p, Computer):
+                p.initialize_memory([player.name  for player in self.players_list])
 
         for i in range(5):
             for p in self.players_list:
@@ -104,6 +109,10 @@ class Yaniv:
                 self.trash.pop()
             else:
                 self.trash.remove(self.pickup_options[pickup_choice - 1])
+
+        for p in self.players_list:
+            if p != player and isinstance(p, Computer):
+                p.observe(discard_choice, self.pickup_options[pickup_choice - 1] if pickup_choice <= len(self.pickup_options) else None, player.name)
 
         # Remove the discarded cards from the player's hand and add them to the trash
         if isinstance(discard_choice, list):
