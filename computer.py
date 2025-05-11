@@ -1,4 +1,5 @@
 import random
+from itertools import combinations
 from typing import List, Tuple, Union, Set, Optional
 
 from card import Card, Suit
@@ -37,7 +38,7 @@ class Computer(Player):
 
     def initialize_memory(self, other_players: List[str]):
         if self.__level >= 3:
-            self.__memory = {p: {'num_cards': 5, 'hand': [], 'recent_discard': None} for p in other_players if p != self.name}
+            self.__memory = {p: {'num_cards': 5, 'hand': [], 'discard': [], 'pickup': []} for p in other_players if p != self.name}
 
 
     def reset(self):
@@ -62,7 +63,7 @@ class Computer(Player):
         self.observe(new_card)
 
 
-    def observe(self, discard: Union[Card, List[Card]], pickup: Optional[Card] = None, player_name: str = None):
+    def observe(self, discard: Union[Card, List[Card]], pickup: Optional[Union[Card, str]] = None, player_name: str = None):
         if self.__level <= 2:
             return
 
@@ -75,21 +76,64 @@ class Computer(Player):
                 self.__deck_total -= card.value()
 
         if player_name:
-            self.__memory[player_name]['recent_discard'] = discard
+            self.__memory[player_name]['discard'].append(discard)
             self.__memory[player_name]['num_cards'] -= len(discard) - 1
 
             for card in discard:
                 if card in self.__memory[player_name]['hand']:
                     self.__memory[player_name]['hand'].remove(card)
             if pickup is not None:
-                self.__memory[player_name]['hand'].append(pickup)
+                if isinstance(pickup, Card):
+                    self.__memory[player_name]['hand'].append(pickup)
+                self.__memory[player_name]['pickup'].append(pickup)
 
 
     def choose_action(self, yaniv_total, pickup_options) -> GameState:
         if self.calc_hand_value() <= yaniv_total:
+            if self.__level == 3:
+                if self.calc_hand_value() == 0:
+                    return GameState.CallYaniv
+
+                for p in self.__memory:
+                    hand_total = sum([c.value() for c in self.__memory[p]['hand']])
+
+                    # If an opponent's hand total is higher than the computer's hand total, it's safe to call Yaniv
+                    if hand_total >= self.calc_hand_value():
+                        print('Higher total')
+                        continue
+                    # If we know all the cards in an opponent's hand and the total hand value is less than our hand value, don't call Yaniv
+                    if self.__memory[p]['num_cards'] == len(self.__memory[p]['hand']) and hand_total < self.calc_hand_value():
+                        print('I LIKE WHAT YOU\'VE GOT')
+                        return GameState.DiscardPickup
+
+                    # If chance of assaf is more than 5% (can be changed), don't call yaniv
+                    chance_of_assaf = self.chance_of_opponent_assaf(self.__memory[p], hand_total)
+                    if chance_of_assaf > 0.05:
+                        return GameState.DiscardPickup
             return GameState.CallYaniv
         else:
             return GameState.DiscardPickup
+
+
+    def chance_of_opponent_assaf(self, player_memory: dict, hand_total: int):
+        unknown_card_count = player_memory['num_cards'] - len(player_memory['hand'])
+        my_hand_value = self.calc_hand_value()
+        jokers_in_deck = (Card(Suit.Joker, 'X1') in self.__deck) + (Card(Suit.Joker, 'X2') in self.__deck)
+
+        # If there are 5 unknown cards or the opponent cannot create a hand with a value less than the computer's hand (even with jokers)
+        # return 0 chance of Assaf
+        if unknown_card_count == 5 or my_hand_value <= unknown_card_count - jokers_in_deck:
+            return 0
+
+        # Look through the difference between the number of unknown cards and how many ways the opponent's
+        valid_combos, total_combos = 0, 0
+        for combo in combinations(self.__deck, unknown_card_count):
+            combo_value = sum(card.value() for card in combo)
+            if hand_total + combo_value < my_hand_value:
+                valid_combos += 1
+            total_combos += 1
+
+        return valid_combos / total_combos
 
 
     def __get_new_discard_options(self, discard_options: List[Union[Card, List[Card]]], new_card: Card) -> List[List[Card]]:
@@ -215,12 +259,22 @@ class Computer(Player):
                         min_card = max(min_val_card, key=lambda x: x.value())
                         discard_choice = discard_options[max_index[min_val_card.index(min_card)]]
 
-                    # With all discard options having the same min values, multiple drop options that have the same value, just pick the first one
+                    # If all discard options have the same min card values and the same number of cards, just pick the first one
                     elif all(x == num_cards[0] for x in num_cards):
                         discard_choice = discard_options[max_index[0]]
 
+                    # If one of the options has a joker, don't pick that one
+                    elif len(has_jokers) != 0:
+                        for i in max_index:
+                            if i not in has_jokers:
+                                discard_choice = discard_options[i]
+                                break
+
             if pickup_choice is None:
                 deck_avg_val = self.__AVG_RAND_CARD_VAL if self.__level == 2 else self.__deck_total / len(self.__deck)
+                # 5% chance to decrease chance deck_avg value to help encourage drawing from the deck to avoid infinite loops where no computers want to draw
+                if random.random() <= 0.05:
+                    deck_avg_val -= 1
                 if pickup_options[0].value() < deck_avg_val:
                     pickup_choice = 0
                 else:

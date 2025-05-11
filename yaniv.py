@@ -66,6 +66,10 @@ class Yaniv:
         self.trash.append(self.deck.pop())
         self.pickup_options = [self.trash[-1]]
 
+        for p in self.players_list:
+            if isinstance(p, Computer):
+                p.observe(self.pickup_options[0], None, None)
+
         print(f'New round! {self.players_list[starting_turn].name} goes first')
         self.cur_turn = starting_turn
 
@@ -112,7 +116,11 @@ class Yaniv:
 
         for p in self.players_list:
             if p != player and isinstance(p, Computer):
-                p.observe(discard_choice, self.pickup_options[pickup_choice - 1] if pickup_choice <= len(self.pickup_options) else None, player.name)
+                if pickup_choice > len(self.pickup_options):
+                    pickup_str = 'Deck vs ' + str(self.pickup_options).replace('\033[91m', '').replace('\033[0m', '')
+                    p.observe(discard_choice, pickup_str, player.name)
+                else:
+                    p.observe(discard_choice, self.pickup_options[pickup_choice - 1], player.name)
 
         # Remove the discarded cards from the player's hand and add them to the trash
         if isinstance(discard_choice, list):
