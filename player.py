@@ -20,7 +20,7 @@ class Player:
         self.cards = []
 
 
-    def reset(self):
+    def reset(self) -> None:
         self.cards.clear()
 
 
@@ -119,7 +119,7 @@ class Player:
         return discard_options
 
 
-    def choose_action(self, yaniv_total, pickup_options):
+    def choose_action(self, yaniv_total: float, pickup_options: List[Card]) -> GameState:
         game_menu = '{player}\nCurrent Top of Discard Pile: {discard}\n\nWhat would you like to do?\n{menu}'
         menu_options = '[D] Discard card(s)\n[Q] Quit'
         yaniv_menu_options = '[D] Discard card(s)\n[C] Call Yaniv\n[Q] Quit'
@@ -140,7 +140,7 @@ class Player:
         return GameState.ChooseAction
 
 
-    def do_turn(self, pickup_options: List[Card]) -> Tuple[Union[Card, List[Card]], int]:
+    def do_turn(self, pickup_options: List[Card], yaniv_total: float) -> Tuple[Union[Card, List[Card]], int]:
         # Get the discard options for the player
         discard_options = self.get_discard_options()
         print(self)
@@ -169,7 +169,7 @@ class Player:
         return discard_choice, pickup_menu_choice
 
 
-    def add_points(self, penalty: int = 0):
+    def add_points(self, penalty: int = 0) -> None:
         # Add points to the player with an optional Assaf penality
         # If the score is 50 or 100, subtract 50 from the score
         self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
@@ -183,5 +183,5 @@ class Player:
         return f'{self.name}\nHand: {self.cards}\nValue: {self.calc_hand_value()}'
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()

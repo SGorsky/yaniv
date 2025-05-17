@@ -86,7 +86,7 @@ class Yaniv:
     def player_discard_pickup(self):
         player = self.players_list[self.cur_turn]
 
-        discard_choice, pickup_choice = player.do_turn(self.pickup_options)
+        discard_choice, pickup_choice = player.do_turn(self.pickup_options, self.yaniv_total)
 
         if pickup_choice > len(self.pickup_options):
             # If the pickup choice is draw from the deck, remove the top card from the deck and add it to your hand

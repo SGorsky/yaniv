@@ -36,7 +36,7 @@ class Computer(Player):
             self.__deck_total = 340
 
 
-    def initialize_memory(self, other_players: List[str]):
+    def initialize_memory(self, other_players: List[str]) -> None:
         if self.__level >= 3:
             self.__memory = {p: {'num_cards': 5, 'hand': [], 'discard': [], 'pickup': []} for p in other_players if p != self.name}
 
@@ -63,7 +63,7 @@ class Computer(Player):
         self.observe(new_card)
 
 
-    def observe(self, discard: Union[Card, List[Card]], pickup: Optional[Union[Card, str]] = None, player_name: str = None):
+    def observe(self, discard: Union[Card, List[Card]], pickup: Optional[Union[Card, str]] = None, player_name: str = None) -> None:
         if self.__level <= 2:
             return
 
@@ -88,26 +88,15 @@ class Computer(Player):
                 self.__memory[player_name]['pickup'].append(pickup)
 
 
-    def choose_action(self, yaniv_total, pickup_options) -> GameState:
+    def choose_action(self, yaniv_total: float, pickup_options: List[Card]) -> GameState:
         if self.calc_hand_value() <= yaniv_total:
             if self.__level == 3:
                 if self.calc_hand_value() == 0:
                     return GameState.CallYaniv
 
                 for p in self.__memory:
-                    hand_total = sum([c.value() for c in self.__memory[p]['hand']])
-
-                    # If an opponent's hand total is higher than the computer's hand total, it's safe to call Yaniv
-                    if hand_total >= self.calc_hand_value():
-                        print('Higher total')
-                        continue
-                    # If we know all the cards in an opponent's hand and the total hand value is less than our hand value, don't call Yaniv
-                    if self.__memory[p]['num_cards'] == len(self.__memory[p]['hand']) and hand_total < self.calc_hand_value():
-                        print('I LIKE WHAT YOU\'VE GOT')
-                        return GameState.DiscardPickup
-
                     # If chance of assaf is more than 5% (can be changed), don't call yaniv
-                    chance_of_assaf = self.chance_of_opponent_assaf(self.__memory[p], hand_total)
+                    chance_of_assaf = self.calc_probability_less_than(self.__memory[p], self.calc_hand_value())
                     if chance_of_assaf > 0.05:
                         return GameState.DiscardPickup
             return GameState.CallYaniv
@@ -115,21 +104,36 @@ class Computer(Player):
             return GameState.DiscardPickup
 
 
-    def chance_of_opponent_assaf(self, player_memory: dict, hand_total: int):
-        unknown_card_count = player_memory['num_cards'] - len(player_memory['hand'])
-        my_hand_value = self.calc_hand_value()
-        jokers_in_deck = (Card(Suit.Joker, 'X1') in self.__deck) + (Card(Suit.Joker, 'X2') in self.__deck)
+    def calc_probability_less_than(self, player_memory: dict, less_than_val: float) -> float:
+        # The purpose of this method is to check if the opponent can call Yaniv or if they can call Assaf and the Computer can call Yaniv
+        # The less_than_val variable is meant to describe either the maximum Yaniv value or the Computer's hand value
+        hand_total = sum([c.value() for c in player_memory['hand']])
 
-        # If there are 5 unknown cards or the opponent cannot create a hand with a value less than the computer's hand (even with jokers)
-        # return 0 chance of Assaf
-        if unknown_card_count == 5 or my_hand_value <= unknown_card_count - jokers_in_deck:
+        # If an opponent's known hand total is greater than or equal less_than_val, there is a 0% chance their hand is smaller
+        if hand_total >= less_than_val:
             return 0
 
-        # Look through the difference between the number of unknown cards and how many ways the opponent's
+        # If we know all the cards in an opponent's hand and the total hand value is smaller than the less_than_val, return 1
+        if player_memory['num_cards'] == len(player_memory['hand']) and hand_total < self.calc_hand_value():
+            return 1
+
+        unknown_card_count = player_memory['num_cards'] - len(player_memory['hand'])
+        jokers_in_deck = (Card(Suit.Joker, 'X1') in self.__deck) + (Card(Suit.Joker, 'X2') in self.__deck)
+
+        # If there are 5 unknown cards, or it's impossible to have a hand with a value smaller than less_than_val (even with jokers) return 0
+        # Ex: less_than_val = 4, the player is holding a 2♣, has two unknown cards, and it's not possible they could be holding a joker
+        # there is no way their hand could be less than 4
+        # Ex: less_than_val = 4, the player is holding a 2♣, has two unknown cards, and there are two possible joker in the deck
+        # they could have an Ace and a Joker which would give them a hand value of 3 or have two other jokers
+        if unknown_card_count == 5 or less_than_val <= hand_total + unknown_card_count - jokers_in_deck:
+            return 0
+
+        # Iterate through the different combinations of possible cards they could have and count how many ways the opponent's hand could be
+        # smaller than the less_than_val. Return the % of possibilities where such a hand value exists
         valid_combos, total_combos = 0, 0
         for combo in combinations(self.__deck, unknown_card_count):
             combo_value = sum(card.value() for card in combo)
-            if hand_total + combo_value < my_hand_value:
+            if hand_total + combo_value < less_than_val:
                 valid_combos += 1
             total_combos += 1
 
@@ -152,7 +156,7 @@ class Computer(Player):
 
 
     @staticmethod
-    def __evaluate_discards(discard_options):
+    def __evaluate_discards(discard_options: List[Union[Card, List[Card]]]) -> Tuple[List[int], int]:
         # Go through the Computer's hand and find the discard value of each of the options
         # Find the biggest discard option
         discard_value = []
@@ -171,9 +175,16 @@ class Computer(Player):
         return max_index, max_discard
 
 
-    def do_turn(self, pickup_options: List[Union[Card]]) -> Tuple[Card, int]:
+    def do_turn(self, pickup_options: List[Card], yaniv_total: float) -> Tuple[Union[Card, List[Card]], int]:
         # Get the discard options
         discard_options = self.get_discard_options()
+        if self.__level == 3:
+            for p in self.__memory:
+                # If chance of assaf is more than 5% (can be changed), don't call yaniv
+                chance_of_assaf = self.calc_probability_less_than(self.__memory[p], yaniv_total)
+                if chance_of_assaf > 0.2:
+                    #TODO Do something if there's a good chance another player can call Yaniv
+                    pass
 
         if self.__level == 1:
             # Level 1 Computer makes random discard and pickup choices
