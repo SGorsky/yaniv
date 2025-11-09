@@ -18,25 +18,25 @@ class Yaniv:
     yaniv_total: int
     cur_turn: int
     state: GameState
-    ASSAF_PENALTY = 25
+    ASSAF_PENALTY = 20
 
 
-    def __init__(self, player_name: str, num_comp_players: int, yaniv_total=7, computer_difficulty: Dict[str, int] = None):
+    def __init__(self, player_name: str, yaniv_total=7, computer_difficulty: List[int] = None):
         self.yaniv_total = yaniv_total
         user = Player(player_name)
         self.players_list.append(user)
 
-        if computer_difficulty is None:
-            for i in range(num_comp_players):
-                self.players_list.append(Computer(f'Computer {i + 1}', 3))
+        if computer_difficulty is not None and isinstance(computer_difficulty, list) and len(computer_difficulty) > 0:
+            for i in range(len(computer_difficulty)):
+                self.players_list.append(Computer(f'Computer {i + 1}', computer_difficulty[i]))
         else:
-            for name in computer_difficulty:
-                self.players_list.append(Computer(name, computer_difficulty[name]))
+            for i in range(len(computer_difficulty)):
+                self.players_list.append(Computer(f'Computer {i + 1}', 3))
 
         # random.shuffle(self.players_list)
         for p in self.players_list:
             if isinstance(p, Computer):
-                p.initialize_memory([player.name  for player in self.players_list])
+                p.initialize_memory([player.name for player in self.players_list])
 
         self.new_round()
         self.state = GameState.ChooseAction
@@ -57,7 +57,7 @@ class Yaniv:
         for p in self.players_list:
             p.reset()
             if isinstance(p, Computer):
-                p.initialize_memory([player.name  for player in self.players_list])
+                p.initialize_memory([player.name for player in self.players_list])
 
         for i in range(5):
             for p in self.players_list:
@@ -80,7 +80,7 @@ class Yaniv:
             self.cur_turn = 0
 
         self.state = GameState.ChooseAction
-        print(f'\nCurrent turn: {self.players_list[self.cur_turn].name}')
+        print(f'\nCurrent turn: {self.players_list[self.cur_turn].name} has {len(self.players_list[self.cur_turn].cards)} cards')
 
 
     def player_discard_pickup(self):
@@ -151,15 +151,16 @@ class Yaniv:
         # Go through each player and check if any have a smaller hand
         # If they do, the player that called Yaniv gets a penalty instead of 0 points
         winning_player_index = None
-        i = 0
-        for p in self.players_list:
-            if p != self.players_list[self.cur_turn]:
-                hand_value = p.calc_hand_value()
-                print(f'{p.name} {p.cards} = {hand_value}')
-                if hand_value < winner.calc_hand_value():
-                    winner = p
-                    winning_player_index = i
+        i = 0 if self.cur_turn + 1 == len(self.players_list) else self.cur_turn + 1
+        while i != self.cur_turn:
+            hand_value = self.players_list[i].calc_hand_value()
+            print(f'{self.players_list[i].name} {self.players_list[i].cards} = {hand_value}')
+            if hand_value <= winner.calc_hand_value():
+                winner = self.players_list[i]
+                winning_player_index = i
             i += 1
+            if i == len(self.players_list):
+                i = 0
 
         print('')
         if winning_player_index is not None:
@@ -210,5 +211,5 @@ class Yaniv:
 
 
 if __name__ == '__main__':
-    yaniv = Yaniv('Player', 3, 7)
+    yaniv = Yaniv('Player', computer_difficulty=[2, 3])
     yaniv.play()
