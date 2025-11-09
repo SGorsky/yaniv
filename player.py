@@ -12,6 +12,7 @@ class Player:
     name: str
     points: List[int]
     cards: List[Card]
+    win_streak = 0
 
 
     def __init__(self, name: str):
@@ -172,11 +173,23 @@ class Player:
     def add_points(self, penalty: int = 0) -> None:
         # Add points to the player with an optional Assaf penality
         # If the score is 50 or 100, subtract 50 from the score
+        self.win_streak = 0
         self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
         print(f'{self.name}: {self.points[-2]} + {self.calc_hand_value()} {"" if penalty == 0 else f"+ {penalty} "}= {self.points[-1]}')
         if self.points[-1] % 50 == 0:
             print(f'{self.name} has {self.points[-1]} points. -50 points')
             self.points[-1] -= 50
+
+
+    def apply_win_streak(self):
+        self.win_streak += 1
+        if self.win_streak == 2:
+            print(f'{self.name} won 2 times in a row. One more and they get -5 points')
+        if self.win_streak == 3:
+            self.win_streak = 0
+            print(f'{self.name} won 3 times in a row. -5 points')
+            self.points.append(self.points[-1] - 5)
+            print(f'{self.name}: {self.points[-2]} - 5 = {self.points[-1]}')
 
 
     def __str__(self) -> str:

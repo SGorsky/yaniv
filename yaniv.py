@@ -168,6 +168,7 @@ class Yaniv:
 
         for p in self.players_list:
             if p == winner:
+                p.apply_win_streak()
                 continue
             if p == self.players_list[self.cur_turn]:
                 p.add_points(self.ASSAF_PENALTY)
