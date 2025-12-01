@@ -95,11 +95,9 @@ class Computer(Player):
                     return GameState.CallYaniv
 
                 for p in self.__memory:
-                    # If chance of assaf is more than 5% (can be changed), don't call yaniv
-                    chance_of_assaf = self.calc_probability_less_than(self.__memory[p], self.calc_hand_value())
-                    if chance_of_assaf > 0.05:
                     # If chance of assaf is more than 20% (can be changed), don't call yaniv
                     chance_of_assaf = self.calc_probability_lte(self.__memory[p], self.calc_hand_value())
+                    print(f'Yaniv check: Chance of Assaf for {p} {round(chance_of_assaf * 100, 2)}%')
                     if chance_of_assaf > 0.20:
                         return GameState.DiscardPickup
             return GameState.CallYaniv
@@ -186,8 +184,7 @@ class Computer(Player):
                 # If chance of assaf is more than 5% (can be changed), don't call yaniv
                 chance_of_assaf = self.calc_probability_lte(self.__memory[p], yaniv_total)
                 if chance_of_assaf > 0.2:
-                    #TODO Do something if there's a good chance another player can call Yaniv
-                    pass
+                    print(f'Chance of Assaf for {p} {round(chance_of_assaf * 100, 2)}%')
 
         if self.__level == 1:
             # Level 1 Computer makes random discard and pickup choices
