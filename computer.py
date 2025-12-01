@@ -98,42 +98,45 @@ class Computer(Player):
                     # If chance of assaf is more than 5% (can be changed), don't call yaniv
                     chance_of_assaf = self.calc_probability_less_than(self.__memory[p], self.calc_hand_value())
                     if chance_of_assaf > 0.05:
+                    # If chance of assaf is more than 20% (can be changed), don't call yaniv
+                    chance_of_assaf = self.calc_probability_lte(self.__memory[p], self.calc_hand_value())
+                    if chance_of_assaf > 0.20:
                         return GameState.DiscardPickup
             return GameState.CallYaniv
         else:
             return GameState.DiscardPickup
 
 
-    def calc_probability_less_than(self, player_memory: dict, less_than_val: float) -> float:
-        # The purpose of this method is to check if the opponent can call Yaniv or if they can call Assaf and the Computer can call Yaniv
-        # The less_than_val variable is meant to describe either the maximum Yaniv value or the Computer's hand value
+    def calc_probability_lte(self, player_memory: dict, lte_val: float) -> float:
+        # The purpose of this method is to check if the opponent can call Yaniv or if they can call Assaf when the Computer can call Yaniv
+        # The lte_val variable is meant to describe either the maximum Yaniv value or the Computer's hand value
         hand_total = sum([c.value() for c in player_memory['hand']])
 
-        # If an opponent's known hand total is greater than or equal less_than_val, there is a 0% chance their hand is smaller
-        if hand_total >= less_than_val:
+        # If an opponent's known hand total is greater than lte_val, there is a 0% chance their hand is smaller
+        if hand_total > lte_val:
             return 0
 
-        # If we know all the cards in an opponent's hand and the total hand value is smaller than the less_than_val, return 1
-        if player_memory['num_cards'] == len(player_memory['hand']) and hand_total < self.calc_hand_value():
+        # If we know all the cards in an opponent's hand and the total hand value is less than or equal than the lte_val, return 1
+        if player_memory['num_cards'] == len(player_memory['hand']) and hand_total <= self.calc_hand_value():
             return 1
 
         unknown_card_count = player_memory['num_cards'] - len(player_memory['hand'])
         jokers_in_deck = (Card(Suit.Joker, 'X1') in self.__deck) + (Card(Suit.Joker, 'X2') in self.__deck)
 
-        # If there are 5 unknown cards, or it's impossible to have a hand with a value smaller than less_than_val (even with jokers) return 0
-        # Ex: less_than_val = 4, the player is holding a 2♣, has two unknown cards, and it's not possible they could be holding a joker
-        # there is no way their hand could be less than 4
-        # Ex: less_than_val = 4, the player is holding a 2♣, has two unknown cards, and there are two possible joker in the deck
+        # If there are 5 unknown cards, or it's impossible to have a hand with a value smaller than lte_val (even with jokers) return 0
+        # Ex: lte_val = 3, the player is holding a 2♣, has two unknown cards, and it's not possible they could be holding a joker
+        # there is no way their hand could be less than or equal to 3
+        # Ex: lte_val = 3, the player is holding a 2♣, has two unknown cards, and there are two possible joker in the deck
         # they could have an Ace and a Joker which would give them a hand value of 3 or have two other jokers
-        if unknown_card_count == 5 or less_than_val <= hand_total + unknown_card_count - jokers_in_deck:
+        if unknown_card_count == 5 or lte_val < hand_total + unknown_card_count - jokers_in_deck:
             return 0
 
         # Iterate through the different combinations of possible cards they could have and count how many ways the opponent's hand could be
-        # smaller than the less_than_val. Return the % of possibilities where such a hand value exists
+        # less than or equal to lte_val. Return the % of possibilities where such a hand value exists
         valid_combos, total_combos = 0, 0
         for combo in combinations(self.__deck, unknown_card_count):
             combo_value = sum(card.value() for card in combo)
-            if hand_total + combo_value < less_than_val:
+            if hand_total + combo_value <= lte_val:
                 valid_combos += 1
             total_combos += 1
 
@@ -181,7 +184,7 @@ class Computer(Player):
         if self.__level == 3:
             for p in self.__memory:
                 # If chance of assaf is more than 5% (can be changed), don't call yaniv
-                chance_of_assaf = self.calc_probability_less_than(self.__memory[p], yaniv_total)
+                chance_of_assaf = self.calc_probability_lte(self.__memory[p], yaniv_total)
                 if chance_of_assaf > 0.2:
                     #TODO Do something if there's a good chance another player can call Yaniv
                     pass
