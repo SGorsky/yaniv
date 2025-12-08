@@ -10,14 +10,14 @@ RANK_ORDER = {'X1': 0, 'X2': 0, 'A': 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8
 
 class Player:
     name: str
-    points: List[int]
+    points: int
     cards: List[Card]
     win_streak = 0
 
 
     def __init__(self, name: str):
         self.name = name
-        self.points = [0]
+        self.points = 0
         self.cards = []
 
 
@@ -152,7 +152,7 @@ class Player:
             print(f'{i}.', discard_options[i - 1])
         print('\nPick-up Options:', pickup_options + ['Draw from the deck'])
         print('What would you like to discard?')
-        discard_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(i)}))
+        discard_menu_choice = int(utils.get_menu_choice({str(i + 1) for i in range(len(discard_options))}))
 
         discard_choice = discard_options[discard_menu_choice - 1]
         print('Discarding', discard_choice)
@@ -174,11 +174,12 @@ class Player:
         # Add points to the player with an optional Assaf penality
         # If the score is 50 or 100, subtract 50 from the score
         self.win_streak = 0
-        self.points.append(self.points[-1] + self.calc_hand_value() + penalty)
-        print(f'{self.name}: {self.points[-2]} + {self.calc_hand_value()} {"" if penalty == 0 else f"+ {penalty} "}= {self.points[-1]}')
-        if self.points[-1] % 50 == 0:
-            print(f'{self.name} has {self.points[-1]} points. -50 points')
-            self.points[-1] -= 50
+        new_score = self.points + self.calc_hand_value() + penalty
+        print(f'{self.name}: {self.points} + {self.calc_hand_value()} {"" if penalty == 0 else f"+ {penalty} "}= {new_score}')
+        self.points = new_score
+        if self.points % 50 == 0:
+            print(f'{self.name} has {self.points} points. -50 points')
+            self.points -= 50
 
 
     def apply_win_streak(self):
@@ -188,8 +189,8 @@ class Player:
         if self.win_streak == 3:
             self.win_streak = 0
             print(f'{self.name} won 3 times in a row. -5 points')
-            self.points.append(self.points[-1] - 5)
-            print(f'{self.name}: {self.points[-2]} - 5 = {self.points[-1]}')
+            self.points -= 5
+            print(f'{self.name}: {self.points - 5} - 5 = {self.points}')
 
 
     def __str__(self) -> str:

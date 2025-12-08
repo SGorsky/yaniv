@@ -1,6 +1,6 @@
 import random
 import time
-from typing import List, Dict
+from typing import List
 
 from card import Card, Suit
 from computer import Computer
@@ -9,12 +9,12 @@ from utils import GameState
 
 
 class Yaniv:
-    deck = []
-    trash = []
+    deck: List[Card] = list()
+    trash: List[Card] = list()
     pickup_options: List[Card]
     num_comp_players: int = 3
-    players_list: List[Player] = []
-    eliminated_players: List[Player] = []
+    players_list: List[Player] = list()
+    eliminated_players: List[Player] = list()
     yaniv_total: int
     cur_turn: int
     state: GameState
@@ -178,14 +178,14 @@ class Yaniv:
         print('\n     SCOREBOARD     ')
         print('====================')
         for p in self.players_list:
-            print(p.name, p.points[-1])
+            print(p.name, p.points)
         for p in self.eliminated_players:
-            print(p.name, p.points[-1])
+            print(p.name, p.points)
         print('====================\n')
 
         # If a player goes over 100 points, they lose and are eliminated from the game
-        for p in self.players_list[:]:
-            if p.points[-1] > 100:
+        for p in self.players_list:
+            if p.points > 100:
                 print(f'{p.name} is eliminated')
                 self.eliminated_players.append(p)
                 self.players_list.remove(p)
